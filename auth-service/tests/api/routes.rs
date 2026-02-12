@@ -11,9 +11,6 @@ async fn root_returns_auth_ui() {
     assert_eq!(response.headers().get("content-type").unwrap(), "text/html");
 }
 
-// TODO: Implement tests for all other routes (signup, login, logout, verify-2fa, and verify-token)
-// For now, simply assert that each route returns a 200 HTTP status code.
-
 #[tokio::test]
 async fn signup_returns_ok() {
     let app = TestApp::new().await;

@@ -7,16 +7,11 @@ use tower_http::services::ServeDir;
 // This struct encapsulates our application-related logic.
 pub struct Application {
     server: Serve<TcpListener, Router, Router>,
-    // address is exposed as a public field
-    // so we have access to it in tests.
     pub address: String,
 }
 
 impl Application {
     pub async fn build(address: &str) -> Result<Self, Box<dyn Error>> {
-        // Move the Router definition from `main.rs` to here.
-        // Also, remove the `hello` route.
-        // We don't need it at this point!
         let assets_dir = ServeDir::new("assets");
         let router = Router::new()
             .fallback_service(assets_dir)
