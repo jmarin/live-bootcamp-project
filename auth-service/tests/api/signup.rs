@@ -13,6 +13,7 @@ async fn should_return_422_if_malformed_input() {
         serde_json::json!({"password": "password123"}),
         serde_json::json!({"email":  random_email}),
         serde_json::json!({}),
+        serde_json::json!({"email": random_email, "password": "password123", "requires_2fa": false }), // this fails because requires_2fa has been renamed to requires2FA in the SignupRequest struct, so the deserialization will fail
     ];
 
     for test_case in test_cases.iter() {
