@@ -12,6 +12,7 @@ async fn should_return_422_if_malformed_input() {
         serde_json::json!({"requires_2fa": true }),
         serde_json::json!({"password": "password123"}),
         serde_json::json!({"email":  random_email}),
+        serde_json::json!({}),
     ];
 
     for test_case in test_cases.iter() {
