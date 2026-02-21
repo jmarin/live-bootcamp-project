@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use crate::domain::{User, UserStore, UserStoreError};
+use crate::domain::{Email, Password, User, UserStore, UserStoreError};
 use async_trait::async_trait;
 
 #[derive(Default)]
 pub struct HashmapUserStore {
-    users: HashMap<String, User>,
+    users: HashMap<Email, User>,
 }
 
 impl HashmapUserStore {
@@ -29,16 +29,16 @@ impl HashmapUserStore {
             })
     }
 
-    pub fn get_user(&self, email: &str) -> Result<User, UserStoreError> {
+    pub fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         self.users
             .get(email)
             .cloned()
             .ok_or(UserStoreError::UserNotFound)
     }
 
-    pub fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
+    pub fn validate_user(&self, email: &Email, password: &Password) -> Result<(), UserStoreError> {
         if let Some(user) = self.users.get(email) {
-            if user.email == email && user.password == password {
+            if user.email == *email && user.password == *password {
                 return Ok(());
             } else {
                 return Err(UserStoreError::InvalidCredentials);
@@ -54,11 +54,15 @@ impl UserStore for HashmapUserStore {
         self.add_user(user)
     }
 
-    async fn get_user(&self, email: &str) -> Result<User, UserStoreError> {
+    async fn get_user(&self, email: &Email) -> Result<User, UserStoreError> {
         self.get_user(email)
     }
 
-    async fn validate_user(&self, email: &str, password: &str) -> Result<(), UserStoreError> {
+    async fn validate_user(
+        &self,
+        email: &Email,
+        password: &Password,
+    ) -> Result<(), UserStoreError> {
         self.validate_user(email, password)
     }
 }
@@ -69,11 +73,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_user() {
-        let users = HashMap::<String, User>::new();
+        let users = HashMap::<Email, User>::new();
         let mut user_store = HashmapUserStore { users };
         let user = User::new(
-            "john@example.com".to_string(),
-            "password123".to_string(),
+            Email::parse(String::from("john@example.com")).unwrap(),
+            Password::parse("password123".to_string()).unwrap(),
             false,
         );
         user_store.add_user(user).unwrap();
@@ -82,29 +86,30 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_user() {
-        let users = HashMap::<String, User>::new();
+        let users = HashMap::<Email, User>::new();
         let mut user_store = HashmapUserStore { users };
         let user = User::new(
-            "john@example.com".to_string(),
-            "password123".to_string(),
+            Email::parse(String::from("john@example.com")).unwrap(),
+            Password::parse("password123".to_string()).unwrap(),
             false,
         );
         user_store.add_user(user.clone()).unwrap();
-        let retrieved_user = user_store.get_user(&"john@example.com");
+        let retrieved_user =
+            user_store.get_user(&Email::parse(String::from("john@example.com")).unwrap());
         assert_eq!(retrieved_user.unwrap(), user);
     }
 
     #[tokio::test]
     async fn test_validate_user() {
         let valid_user = User::new(
-            "john@example.com".to_string(),
-            "password123".to_string(),
+            Email::parse(String::from("john@example.com")).unwrap(),
+            Password::parse("password123".to_string()).unwrap(),
             false,
         );
 
-        let invalid_password = "wrongpassword";
+        let invalid_password = Password::parse("wrongpassword".to_string()).unwrap();
 
-        let users = HashMap::<String, User>::new();
+        let users = HashMap::<Email, User>::new();
         let mut user_store = HashmapUserStore { users };
         user_store.add_user(valid_user.clone()).unwrap();
         assert!(user_store
@@ -112,7 +117,7 @@ mod tests {
             .is_ok());
 
         assert_eq!(
-            user_store.validate_user(&valid_user.email, invalid_password),
+            user_store.validate_user(&valid_user.email, &invalid_password),
             Err(UserStoreError::InvalidCredentials)
         );
     }
