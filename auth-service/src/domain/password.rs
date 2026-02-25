@@ -4,7 +4,7 @@ pub struct Password(String);
 impl Password {
     pub fn parse(s: String) -> Result<Password, String> {
         if s.len() >= 8 {
-            Ok(Password(s))
+            Ok(Self(s))
         } else {
             Err("Password must be at least 8 characters long".to_string())
         }
@@ -13,16 +13,37 @@ impl Password {
 
 impl AsRef<str> for Password {
     fn as_ref(&self) -> &str {
-        self.0.as_ref()
+        &self.0
     }
 }
 
 #[cfg(test)]
 
 mod tests {
+    use fake::{faker::internet::en::Password as FakePassword, Fake};
     use quickcheck_macros::quickcheck;
+    use rand::SeedableRng;
+
+    use crate::domain::password;
 
     use super::*;
+
+    #[derive(Debug, Clone)]
+    struct ValidPasswordFixture(String);
+
+    impl quickcheck::Arbitrary for ValidPasswordFixture {
+        fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+            let seed: u64 = g.size() as u64;
+            let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
+            let password = FakePassword(8..30).fake_with_rng(&mut rng);
+            Self(password)
+        }
+    }
+
+    #[quickcheck]
+    fn valid_passwords_parse_successfully(valid_password: ValidPasswordFixture) -> bool {
+        Password::parse(valid_password.0).is_ok()
+    }
 
     #[quickcheck]
     fn test_valid_password_preserves_input(s: String) -> bool {
