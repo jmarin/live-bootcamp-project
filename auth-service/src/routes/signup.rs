@@ -10,21 +10,11 @@ pub async fn signup(
     State(state): State<AppState>,
     Json(request): Json<SignupRequest>,
 ) -> Result<impl IntoResponse, AuthAPIError> {
-    let email = request.email;
-    let password = request.password;
+    let email = Email::parse(request.email).map_err(|_| AuthAPIError::InvalidCredentials)?;
+    let password =
+        Password::parse(request.password).map_err(|_| AuthAPIError::InvalidCredentials)?;
 
-    if password.len() < 8 {
-        return Err(AuthAPIError::InvalidCredentials);
-    }
-    if !email.contains("@") {
-        return Err(AuthAPIError::InvalidCredentials);
-    }
-
-    let user = User::new(
-        Email::parse(email).unwrap(),
-        Password::parse(password).unwrap(),
-        request.requires_2fa,
-    );
+    let user = User::new(email, password, request.requires_2fa);
 
     let mut user_store = state.user_store.write().await;
 
