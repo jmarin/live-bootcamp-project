@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use axum::http::StatusCode;
+use axum::http::{HeaderValue, Method, StatusCode};
 use axum::{
     response::{IntoResponse, Response},
     routing::post,
@@ -9,6 +9,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpListener;
+use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
 pub mod app_state;
@@ -20,7 +21,7 @@ pub mod utils;
 use app_state::AppState;
 use routes::*;
 
-use crate::domain::{AuthAPIError, UserStore};
+use crate::domain::AuthAPIError;
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
@@ -40,6 +41,8 @@ impl IntoResponse for AuthAPIError {
             AuthAPIError::UnexpectedError => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
+            AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing Token"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid Token"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),
@@ -50,6 +53,17 @@ impl IntoResponse for AuthAPIError {
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
+        let allowed_origins = [
+            "http://localhost:8000".parse()?,
+            // TODO: Replace [YOUR_DROPLET_IP] with your Droplet IP address
+            "http://[YOUR_DROPLET_IP]:8000".parse()?,
+        ];
+
+        let cors = CorsLayer::new()
+            .allow_methods([Method::GET, Method::POST])
+            .allow_credentials(true)
+            .allow_origin(allowed_origins);
+
         let assets_dir = ServeDir::new("assets");
         let router = Router::new()
             .fallback_service(assets_dir)
@@ -58,6 +72,7 @@ impl Application {
             .route("/logout", post(logout))
             .route("/verify-2fa", post(verify_2fa))
             .route("/verify-token", post(verify_token))
+            .layer(cors)
             .with_state(app_state);
 
         let listener = tokio::net::TcpListener::bind(address).await?;

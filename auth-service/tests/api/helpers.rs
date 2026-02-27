@@ -1,12 +1,14 @@
 use std::sync::Arc;
 
-use auth_service::{Application, app_state::AppState, services::HashmapUserStore};
+use auth_service::{Application, app_state::AppState, services::HashmapUserStore, utils::constants::test::APP_ADDRESS};
+use reqwest::cookie::Jar;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
 //TestApp is test helper that is responsible for configuring/launching the auth service and providing methods for sending HTTP requests to the auth service.
 pub struct TestApp {
     pub address: String,
+    pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
 }
 
@@ -15,7 +17,7 @@ impl TestApp {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::new()));
         let app_state = AppState { user_store };
 
-        let app = Application::build(app_state,"127.0.0.1:0")
+        let app = Application::build(app_state, APP_ADDRESS)
             .await
             .expect("Failed to build application");
 
@@ -25,14 +27,17 @@ impl TestApp {
         // to avoid blocking the main test thread.
         let _ = tokio::spawn(app.run());
 
+        let cookie_jar = Arc::new(Jar::default()); 
+
         let http_client = 
          // Create a Reqwest http client instance
             reqwest::Client::builder()
+                .cookie_provider(cookie_jar.clone())
                 .build()
                 .expect("Failed to build HTTP client");
 
         // Create new 'TestApp' instance and return it
-        Self {address, http_client}
+        Self {address, cookie_jar, http_client}
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
