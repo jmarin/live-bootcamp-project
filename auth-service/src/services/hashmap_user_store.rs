@@ -37,14 +37,16 @@ impl HashmapUserStore {
     }
 
     pub fn validate_user(&self, email: &Email, password: &Password) -> Result<(), UserStoreError> {
-        if let Some(user) = self.users.get(email) {
-            if user.email == *email && user.password == *password {
-                return Ok(());
-            } else {
-                return Err(UserStoreError::InvalidCredentials);
+        match self.users.get(email) {
+            Some(user) => {
+                if user.password.eq(password) {
+                    Ok(())
+                } else {
+                    Err(UserStoreError::InvalidCredentials)
+                }
             }
+            None => Err(UserStoreError::UserNotFound),
         }
-        Err(UserStoreError::UserNotFound)
     }
 }
 
