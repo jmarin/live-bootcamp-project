@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use axum::http::{HeaderValue, Method, StatusCode};
+use axum::http::{Method, StatusCode};
 use axum::{
     response::{IntoResponse, Response},
     routing::post,
@@ -38,11 +38,14 @@ impl IntoResponse for AuthAPIError {
         let (status, error_message): (StatusCode, &str) = match self {
             AuthAPIError::UserAlreadyExists => (StatusCode::CONFLICT, "User already exists"),
             AuthAPIError::InvalidCredentials => (StatusCode::BAD_REQUEST, "Invalid credentials"),
+            AuthAPIError::IncorrectCredentials => {
+                (StatusCode::UNAUTHORIZED, "Incorrect credentials")
+            }
             AuthAPIError::UnexpectedError => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Unexpected error")
             }
             AuthAPIError::MissingToken => (StatusCode::BAD_REQUEST, "Missing Token"),
-            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid Token"),
+            AuthAPIError::InvalidToken => (StatusCode::UNAUTHORIZED, "Invalid auth token"),
         };
         let body = Json(ErrorResponse {
             error: error_message.to_string(),

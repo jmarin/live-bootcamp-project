@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use auth_service::{Application, app_state::AppState, services::HashmapUserStore, utils::constants::test::APP_ADDRESS};
+use auth_service::{Application, app_state::{AppState, BannedTokenStoreType}, services::{HashmapUserStore, HashsetBannedTokenStore}, utils::constants::test::APP_ADDRESS};
 use reqwest::cookie::Jar;
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -10,12 +10,14 @@ pub struct TestApp {
     pub address: String,
     pub cookie_jar: Arc<Jar>,
     pub http_client: reqwest::Client,
+    pub banned_token_store: BannedTokenStoreType,
 }
 
 impl TestApp {
     pub async fn new() -> Self {
         let user_store = Arc::new(RwLock::new(HashmapUserStore::new()));
-        let app_state = AppState { user_store };
+        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::new()));
+        let app_state = AppState { user_store, banned_token_store: banned_token_store.clone() };
 
         let app = Application::build(app_state, APP_ADDRESS)
             .await
@@ -36,8 +38,9 @@ impl TestApp {
                 .build()
                 .expect("Failed to build HTTP client");
 
+
         // Create new 'TestApp' instance and return it
-        Self {address, cookie_jar, http_client}
+        Self {address, cookie_jar, http_client, banned_token_store}
     }
 
     pub async fn get_root(&self) -> reqwest::Response {
@@ -47,6 +50,7 @@ impl TestApp {
             .await
             .expect("Failed to execute request")
     }
+ 
 
     pub async fn post_signup<Body>(&self, body: &Body) -> reqwest::Response 
     where 
@@ -87,9 +91,10 @@ impl TestApp {
             .expect("Failed to execute request")
     }
 
-    pub async fn post_verify_token(&self) -> reqwest::Response {
+    pub async fn post_verify_token<Body>(&self, body: &Body) -> reqwest::Response where Body: serde::Serialize {
         self.http_client
             .post(format!("{}/verify-token", &self.address))
+            .json(body)
             .send()
             .await
             .expect("Failed to execute request")

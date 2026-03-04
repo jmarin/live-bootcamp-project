@@ -56,6 +56,7 @@ async fn should_return_400_if_invalid_input() {
     }
 }
 
+#[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
     let app = TestApp::new().await;
 
