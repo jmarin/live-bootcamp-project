@@ -1,10 +1,6 @@
 use crate::helpers::TestApp;
 
-use auth_service::{
-    utils::{auth, constants::JWT_COOKIE_NAME},
-    ErrorResponse,
-};
-use axum_extra::extract::cookie;
+use auth_service::utils::constants::JWT_COOKIE_NAME;
 use reqwest::Url;
 
 #[tokio::test]
@@ -112,7 +108,7 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
 
     assert!(!cookie.value().is_empty());
 
-    let token = cookie.value();
+    let _ = cookie.value();
 
     let response = app.post_logout().await;
     assert_eq!(response.status().as_u16(), 200);

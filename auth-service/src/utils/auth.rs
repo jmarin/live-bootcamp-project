@@ -1,6 +1,6 @@
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use chrono::Utc;
-use jsonwebtoken::{decode, encode, errors::Error, DecodingKey, EncodingKey, Validation};
+use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Validation};
 use serde::{Deserialize, Serialize};
 
 use crate::{app_state::BannedTokenStoreType, domain::email::Email};
@@ -107,7 +107,7 @@ mod tests {
 
     use tokio::sync::RwLock;
 
-    use crate::{app_state, services::HashsetBannedTokenStore};
+    use crate::services::data_stores::HashsetBannedTokenStore;
 
     use super::*;
 
