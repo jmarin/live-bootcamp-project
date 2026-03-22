@@ -5,12 +5,12 @@ use auth_service::{
     ErrorResponse,
 };
 
+use test_helpers::api_test;
+
 use crate::helpers::TestApp;
 
-#[tokio::test]
+#[api_test]
 async fn should_return_422_if_malformed_input() {
-    let app = TestApp::new().await;
-
     let invalid_inputs = [
         serde_json::json!({}),
         serde_json::json!({"email": 23}),
@@ -23,10 +23,8 @@ async fn should_return_422_if_malformed_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
-
     let email = TestApp::get_random_email();
     let login_attempt_id = LoginAttemptId::default().as_ref().to_owned();
     let two_fa_code = TwoFACode::default().as_ref().to_owned();
@@ -43,10 +41,8 @@ async fn should_return_400_if_invalid_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
-
     let random_email = TestApp::get_random_email();
 
     let signup_body = serde_json::json!({
@@ -134,10 +130,9 @@ async fn should_return_401_if_incorrect_credentials() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_old_code() {
     // Call login twice. Then, attempt to call verify-fa with the 2FA code from the first login requet. This should fail.
-    let app = TestApp::new().await;
 
     let random_email = TestApp::get_random_email();
 
@@ -189,11 +184,9 @@ async fn should_return_401_if_old_code() {
     assert_eq!(response.status().as_u16(), 401);
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_200_if_correct_code() {
     // Make sure to assert the auth cookie gets set
-
-    let app = TestApp::new().await;
     let random_email = TestApp::get_random_email();
 
     let signup_body = serde_json::json!({
@@ -247,9 +240,8 @@ async fn should_return_200_if_correct_code() {
     assert!(!auth_cookie.value().is_empty());
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_same_code_twice() {
-    let app = TestApp::new().await;
     let random_email = TestApp::get_random_email();
 
     let signup_body = serde_json::json!({

@@ -1,10 +1,7 @@
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::{
-    domain::{BannedTokenStore, Email, EmailClient, TwoFACodeStore, UserStore},
-    services::mock_email_client::MockEmailClient,
-};
+use crate::domain::{BannedTokenStore, EmailClient, TwoFACodeStore, UserStore};
 
 // Using a type alias to improve readability!
 // By wrapping HashmapUserStore  in Tokio's RwLock smart pointer the user store can be safely mutated across threads,

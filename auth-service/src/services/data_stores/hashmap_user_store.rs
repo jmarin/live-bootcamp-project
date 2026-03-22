@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::domain::{Email, HashedPassword, User, UserStore, UserStoreError};
+use crate::domain::{Email, User, UserStore, UserStoreError};
 use async_trait::async_trait;
 
 #[derive(Default)]

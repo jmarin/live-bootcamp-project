@@ -3,9 +3,7 @@ use std::sync::Arc;
 use auth_service::app_state::AppState;
 
 use auth_service::services::data_stores::hashmap_two_fa_code_store::HashmapTwoFACodeStore;
-use auth_service::services::data_stores::{
-    HashmapUserStore, HashsetBannedTokenStore, PostgresUserStore,
-};
+use auth_service::services::data_stores::{HashsetBannedTokenStore, PostgresUserStore};
 use auth_service::services::mock_email_client::MockEmailClient;
 use auth_service::utils::constants::prod::APP_ADDRESS;
 use auth_service::utils::constants::DATABASE_URL;

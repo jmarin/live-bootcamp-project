@@ -1,4 +1,4 @@
-use crate::domain::{Email, HashedPassword, User};
+use crate::domain::{Email, User};
 use async_trait::async_trait;
 use rand::Rng;
 use uuid::Uuid;

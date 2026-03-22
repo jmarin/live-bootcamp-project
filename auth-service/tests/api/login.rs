@@ -2,15 +2,14 @@ use auth_service::{
     domain::data_stores::LoginAttemptId, routes::TwoFactorAuthResponse,
     utils::constants::JWT_COOKIE_NAME, ErrorResponse,
 };
+use test_helpers::api_test;
 
 use crate::helpers::TestApp;
 
 use auth_service::domain::Email;
 
-#[tokio::test]
+#[api_test]
 async fn should_return_422_if_malformed_credentials() {
-    let app = TestApp::new().await;
-
     let random_email = TestApp::get_random_email();
 
     let test_cases = [
@@ -32,9 +31,8 @@ async fn should_return_422_if_malformed_credentials() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_400_if_invalid_input() {
-    let app = TestApp::new().await;
     let invalid_inputs = [
         serde_json::json!({"email": "email.com", "password": "password123"}),
         serde_json::json!({"email": "email@example.com", "password": "pass"}),
@@ -61,10 +59,8 @@ async fn should_return_400_if_invalid_input() {
     }
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_401_if_incorrect_credentials() {
-    let app = TestApp::new().await;
-
     let random_email = TestApp::get_random_email();
     let user = serde_json::json!(
         {
@@ -77,10 +73,8 @@ async fn should_return_401_if_incorrect_credentials() {
     assert_eq!(response.status().as_u16(), 401);
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
-    let app = TestApp::new().await;
-
     let random_email = TestApp::get_random_email();
 
     let signup_body = serde_json::json!({
@@ -110,10 +104,8 @@ async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
     assert!(!auth_cookie.value().is_empty());
 }
 
-#[tokio::test]
+#[api_test]
 async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
-    let app = TestApp::new().await;
-
     let random_email = TestApp::get_random_email();
 
     let signup_body = serde_json::json!({
@@ -140,8 +132,6 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
 
     assert_eq!(json_body.message, "2FA required".to_owned());
 
-    // TODO: assert that `json_body.login_attempt_id` is stored inside `app.two_fa_code_store`
-
     let login_attempt = json_body.login_attempt_id;
     let email = Email::parse(random_email).expect("Could not parse email");
 
@@ -155,5 +145,5 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
 
     let login_attempt_id =
         LoginAttemptId::parse(login_attempt).expect("Could not parse LoginAttemptId");
-    assert_eq!(read_2fa_code.0, login_attempt_id)
+    assert_eq!(read_2fa_code.0, login_attempt_id);
 }
