@@ -1,6 +1,6 @@
 use std::{str::FromStr, sync::Arc};
 
-use auth_service::{Application, app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, get_postgres_pool, services::{data_stores::{HashsetBannedTokenStore, PostgresUserStore, hashmap_two_fa_code_store::HashmapTwoFACodeStore}, mock_email_client::MockEmailClient}, utils::constants::{DATABASE_URL, test::APP_ADDRESS}};
+use auth_service::{Application, app_state::{AppState, BannedTokenStoreType, TwoFACodeStoreType}, get_postgres_pool, get_redis_client, services::{data_stores::{HashsetBannedTokenStore, PostgresUserStore, RedisBannedTokenStore, RedisTwoFACodeStore, hashmap_two_fa_code_store::HashmapTwoFACodeStore}, mock_email_client::MockEmailClient}, utils::constants::{DATABASE_URL, DEFAULT_REDIS_HOSTNAME, test::APP_ADDRESS}};
 use reqwest::cookie::Jar;
 use sqlx::{Connection, Executor, PgConnection, PgPool, postgres::{PgConnectOptions, PgPoolOptions}};
 use tokio::sync::RwLock;
@@ -22,8 +22,8 @@ impl TestApp {
         let (pg_pool, db_name) = configure_postgresql().await;
          
         let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
-        let banned_token_store = Arc::new(RwLock::new(HashsetBannedTokenStore::new()));
-        let two_fa_code_store = Arc::new(RwLock::new(HashmapTwoFACodeStore::new()));
+        let banned_token_store = Arc::new(RwLock::new(RedisBannedTokenStore::new(Arc::new(RwLock::new(configure_redis())))));
+        let two_fa_code_store = Arc::new(RwLock::new(RedisTwoFACodeStore::new(Arc::new(RwLock::new(configure_redis())))));
         let email_client = Arc::new(MockEmailClient::default());
         let app_state = AppState { user_store, banned_token_store: banned_token_store.clone(), two_fa_code_store: two_fa_code_store.clone(), email_client };
 
@@ -211,4 +211,13 @@ async fn delete_database(db_name: &str) {
         .execute(format!(r#"DROP DATABASE "{}";"#, db_name).as_str())
         .await
         .expect("Failed to drop the database.");
+}
+
+fn configure_redis() -> redis::Connection {
+    let redis_hostname = DEFAULT_REDIS_HOSTNAME.to_owned();
+
+    get_redis_client(redis_hostname)
+        .expect("Failed to get Redis client")
+        .get_connection()
+        .expect("Failed to get Redis connection")
 }
